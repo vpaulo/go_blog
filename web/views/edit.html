@@ -1,0 +1,9 @@
+{{define "title"}}Create new article{{end}} {{define "scripts"}} {{end}}
+{{define "body"}}
+<form method="post" action="/article/{{.ID}}">
+    <input type="text" name="title" value="{{.Title}}" />
+    <textarea id="mytextarea" name="content">{{.Content}}</textarea>
+    <input type="hidden" name="_method" value="PUT" />
+    <button id="submit" type="submit" onclick="submitForm()">Edit</button>
+</form>
+{{end}}
