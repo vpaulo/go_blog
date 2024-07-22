@@ -10,36 +10,36 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-const blogDataFolder = "./.blog"
-const dbPath string = blogDataFolder + "/sqlite-database.db"
-
 type Article struct {
 	ID      int           `json:"id"`
 	Title   string        `json:"title"`
 	Content template.HTML `json:"content"`
 }
 
-func Connect() (*sql.DB, error) {
+func CreateDataFolder(blogDataFolder string, dbPath string) {
 	if _, err := os.Stat(dbPath); errors.Is(err, os.ErrNotExist) {
 		e := os.MkdirAll(blogDataFolder, 0700) // Create data folder
 		if e != nil {
 			log.Fatal(e)
 		}
-		CreateDatabase() // Create db file
+		CreateDB(dbPath) // Create db file
 	}
+}
 
-	var err error
+func OpenDB(dbPath string) (*sql.DB, error) {
 	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
 		return nil, err
 	}
 
-	createTable(db)
+	if err := db.Ping(); err != nil {
+		log.Fatal(err)
+	}
 
 	return db, nil
 }
 
-func CreateDatabase() {
+func CreateDB(dbPath string) {
 	log.Printf("Creating %s...", dbPath)
 	file, err := os.Create(dbPath)
 	if err != nil {
@@ -49,7 +49,7 @@ func CreateDatabase() {
 	log.Printf("%s created", dbPath)
 }
 
-func createTable(db *sql.DB) {
+func CreateTable(db *sql.DB) {
 	createArticlesTableSQL := `CREATE TABLE if not exists articles (
 		"id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
 		"title" TEXT,
@@ -139,7 +139,12 @@ func UpdateArticle(db *sql.DB, articleId string, title string, content string) e
 	}
 	defer query.Close()
 
-	_, err = query.Exec(title, content, articleId)
+	article := &Article{
+		Title:   title,
+		Content: template.HTML(content),
+	}
+
+	_, err = query.Exec(article.Title, article.Content, articleId)
 	if err != nil {
 		return err
 	}

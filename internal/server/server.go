@@ -18,14 +18,25 @@ const port = ":4000"
 var db *sql.DB
 var mux *http.ServeMux
 
-func Start() {
+const blogDataFolder = "./.blog"
+const dbPath string = blogDataFolder + "/sqlite-database.db"
+
+func connectDB() {
 	var err error
-	db, err = blogDB.Connect()
+
+	blogDB.CreateDataFolder(blogDataFolder, dbPath)
+
+	db, err = blogDB.OpenDB(dbPath)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 	defer db.Close()
 
+	blogDB.CreateTable(db)
+}
+
+func Start() {
+	connectDB()
 	mux = http.NewServeMux()
 
 	mux.HandleFunc("GET /", getAllArticles)
