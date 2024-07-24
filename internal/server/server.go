@@ -48,8 +48,8 @@ func Start() {
 	mux.Handle("GET /article/{articleId}/edit", articleCtx(http.HandlerFunc(editArticle)))
 
 	log.Printf("Listening on %s...", port)
-	contextedMux := changeMethod(mux)
-	if err := http.ListenAndServe(port, contextedMux); err != nil && err != http.ErrServerClosed {
+	mwMux := changeMethod(mux)
+	if err := http.ListenAndServe(port, mwMux); err != nil && err != http.ErrServerClosed {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 }
