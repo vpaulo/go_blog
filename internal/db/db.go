@@ -33,7 +33,7 @@ func OpenDB(dbPath string) (*sql.DB, error) {
 	}
 
 	if err := db.Ping(); err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	return db, nil
@@ -61,7 +61,11 @@ func CreateTable(db *sql.DB) {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	statement.Exec()
+	_, err = statement.Exec()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
 	log.Println("articles table created")
 }
 

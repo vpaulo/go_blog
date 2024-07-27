@@ -16,7 +16,6 @@ import (
 const port = ":4000"
 
 var db *sql.DB
-var mux *http.ServeMux
 
 const blogDataFolder = "./.blog"
 const dbPath string = blogDataFolder + "/sqlite-database.db"
@@ -30,14 +29,17 @@ func connectDB() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	defer db.Close()
+	// defer db.Close()
 
 	blogDB.CreateTable(db)
 }
 
 func Start() {
 	connectDB()
-	mux = http.NewServeMux()
+
+	defer db.Close()
+
+	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /", getAllArticles)
 	mux.HandleFunc("GET /article", newArticle)
@@ -48,6 +50,7 @@ func Start() {
 	mux.Handle("GET /article/{articleId}/edit", articleCtx(http.HandlerFunc(editArticle)))
 
 	log.Printf("Listening on %s...", port)
+
 	mwMux := changeMethod(mux)
 	if err := http.ListenAndServe(port, mwMux); err != nil && err != http.ErrServerClosed {
 		log.Fatalf("Failed to start server: %v", err)
@@ -67,6 +70,7 @@ func changeMethod(next http.Handler) http.Handler {
 			default:
 			}
 		}
+
 		next.ServeHTTP(w, r)
 	})
 }
@@ -76,8 +80,9 @@ func articleCtx(next http.Handler) http.Handler {
 		articleId := r.PathValue("articleId")
 		article, err := blogDB.GetArticle(db, articleId)
 		if err != nil {
-			fmt.Println(err)
-			http.Error(w, http.StatusText(404), 404)
+			// http.Error(w, http.StatusText(404), 404)
+			http.NotFound(w, r)
+
 			return
 		}
 		ctx := context.WithValue(r.Context(), "article", article)
@@ -90,6 +95,7 @@ func getAllArticles(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+
 	log.Println("Articles: ", articles)
 
 	t, _ := template.ParseFiles("web/views/base.html", "web/views/index.html")
